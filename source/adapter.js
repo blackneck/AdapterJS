@@ -259,24 +259,19 @@ AdapterJS.parseWebrtcDetectedBrowser = function () {
     // Detect bowser browser agent
     if (iosBowserAgent) {
       webrtcDetectedBrowser = 'bowser';
-
-      iosBowserVersionParts = iosBowserAgent[0].split('/')[1].split('.');
-      // NOTE: Version wise, we extract the "0.2" for the version an example in "Bowser/0.2.1"
-      //       Ignoring the minor version
-      webrtcDetectedVersion = parseFloat(iosBowserVersionParts[0] +
-        (iosBowserVersionParts.length > 1 ? '.' + iosBowserVersionParts[1] : ''));
+      webrtcDetectedVersion = parseFloat(iosBowserAgent[0].split('/')[1], 10);
       webrtcDetectedType    = 'webkit';
     
     } else if (iosChromeAgent) {
       // Browser which do not support webrtc yet
       webrtcDetectedBrowser = 'chrome';
-      webrtcDetectedVersion = parseInt(iosChromeAgent[0].split('/')[1].split('.')[0], 10);
+      webrtcDetectedVersion = parseInt(iosChromeAgent[0].split('/')[1], 10);
       webrtcDetectedType    = null;
 
     } else if (iosFirefoxAgent) {
       // Browser which do not support webrtc yet
       webrtcDetectedBrowser = 'firefox';
-      webrtcDetectedVersion = parseInt(iosFirefoxAgent[0].split('/')[1].split('.')[0], 10);
+      webrtcDetectedVersion = parseInt(iosFirefoxAgent[0].split('/')[1], 10);
       webrtcDetectedType    = null;
     
     } else if (!webrtcDetectedVersion) {
