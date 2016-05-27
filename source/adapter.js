@@ -262,18 +262,21 @@ AdapterJS.parseWebrtcDetectedBrowser = function () {
       webrtcDetectedVersion = parseFloat(iosBowserAgent[0].split('/')[1], 10);
       webrtcDetectedType    = 'webkit';
     
+    // Detect chrome browser agent
     } else if (iosChromeAgent) {
       // Browser which do not support webrtc yet
       webrtcDetectedBrowser = 'chrome';
       webrtcDetectedVersion = parseInt(iosChromeAgent[0].split('/')[1], 10);
       webrtcDetectedType    = null;
 
+    // Detect firefox browser agent
     } else if (iosFirefoxAgent) {
       // Browser which do not support webrtc yet
       webrtcDetectedBrowser = 'firefox';
       webrtcDetectedVersion = parseInt(iosFirefoxAgent[0].split('/')[1], 10);
       webrtcDetectedType    = null;
     
+    // Display as unknown agent
     } else if (!webrtcDetectedVersion) {
       // Unknown browser which do not support webrtc yet
       webrtcDetectedBrowser = 'unknown';
@@ -305,6 +308,16 @@ AdapterJS.parseWebrtcDetectedBrowser = function () {
     // Blink engine detection
     webrtcDetectedBrowser = 'blink';
     // TODO: detected WebRTC version
+
+    var blinkAndroidAgent = navigator.userAgent.match(/android\s([0-9\.]*)/);
+
+    // Detect android browser agent
+    if (blinkAndroidAgent) {
+      // Browser which has old support of webrtc but not really
+      webrtcDetectedBrowser = 'android';
+      webrtcDetectedVersion = parseFloat(blinkAndroidAgent[1]);
+      webrtcDetectedType    = 'webkit';
+    }
   }
 
   window.webrtcDetectedBrowser = webrtcDetectedBrowser;
