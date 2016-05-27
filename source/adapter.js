@@ -309,7 +309,7 @@ AdapterJS.parseWebrtcDetectedBrowser = function () {
     webrtcDetectedBrowser = 'blink';
     // TODO: detected WebRTC version
 
-    var blinkAndroidAgent = navigator.userAgent.match(/android\s([0-9\.]*)/);
+    var blinkAndroidAgent = navigator.userAgent.match(/[A|a]ndroid\s([0-9\.]*)/);
 
     // Detect android browser agent
     if (blinkAndroidAgent) {

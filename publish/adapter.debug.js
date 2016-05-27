@@ -1,4 +1,4 @@
-/*! adapterjs - v0.13.3 - 2016-04-13 */
+/*! adapterjs - v0.13.3 - 2016-05-27 */
 
 // Adapter's interface.
 var AdapterJS = AdapterJS || {};
@@ -267,6 +267,40 @@ AdapterJS.parseWebrtcDetectedBrowser = function () {
     webrtcMinimumVersion  = 7;
     hasMatch = /version\/(\d+)/i.exec(navigator.userAgent) || [];
     webrtcDetectedVersion = parseInt(hasMatch[1], 10);
+
+    var iosBowserAgent  = navigator.userAgent.match(/Bowser\/[0-9.]*/g),
+        iosChromeAgent  = navigator.userAgent.match(/CriOS\/[0-9.]*/g),
+        iosFirefoxAgent = navigator.userAgent.match(/FxiOS\/[0-9.]*/g);
+
+    // Somehow it will be detected as "safari" because it's in iOS device
+    // Detect bowser browser agent
+    if (iosBowserAgent) {
+      webrtcDetectedBrowser = 'bowser';
+      webrtcDetectedVersion = parseFloat(iosBowserAgent[0].split('/')[1], 10);
+      webrtcDetectedType    = 'webkit';
+    
+    // Detect chrome browser agent
+    } else if (iosChromeAgent) {
+      // Browser which do not support webrtc yet
+      webrtcDetectedBrowser = 'chrome';
+      webrtcDetectedVersion = parseInt(iosChromeAgent[0].split('/')[1], 10);
+      webrtcDetectedType    = null;
+
+    // Detect firefox browser agent
+    } else if (iosFirefoxAgent) {
+      // Browser which do not support webrtc yet
+      webrtcDetectedBrowser = 'firefox';
+      webrtcDetectedVersion = parseInt(iosFirefoxAgent[0].split('/')[1], 10);
+      webrtcDetectedType    = null;
+    
+    // Display as unknown agent
+    } else if (!webrtcDetectedVersion) {
+      // Unknown browser which do not support webrtc yet
+      webrtcDetectedBrowser = 'unknown';
+      webrtcDetectedVersion = 0;
+      webrtcDetectedType    = null;
+    }
+
   } else if (/*@cc_on!@*/false || !!document.documentMode) {
     // Internet Explorer 6-11
     webrtcDetectedBrowser = 'IE';
@@ -291,6 +325,16 @@ AdapterJS.parseWebrtcDetectedBrowser = function () {
     // Blink engine detection
     webrtcDetectedBrowser = 'blink';
     // TODO: detected WebRTC version
+
+    var blinkAndroidAgent = navigator.userAgent.match(/[A|a]ndroid\s([0-9\.]*)/);
+
+    // Detect android browser agent
+    if (blinkAndroidAgent) {
+      // Browser which has old support of webrtc but not really
+      webrtcDetectedBrowser = 'android';
+      webrtcDetectedVersion = parseFloat(blinkAndroidAgent[1]);
+      webrtcDetectedType    = 'webkit';
+    }
   }
 
   window.webrtcDetectedBrowser = webrtcDetectedBrowser;
@@ -2750,13 +2794,69 @@ if ( navigator.mozGetUserMedia ||
       });
     };
 
+    // getUserMedia constraints shim.
+    // Copied from Chrome
+    var constraintsToPlugin = function(c) {
+      if (typeof c !== 'object' || c.mandatory || c.optional) {
+        return c;
+      }
+      var cc = {};
+      Object.keys(c).forEach(function(key) {
+        if (key === 'require' || key === 'advanced' || key === 'mediaSource') {
+          return;
+        }
+        var r = (typeof c[key] === 'object') ? c[key] : {ideal: c[key]};
+        if (r.exact !== undefined && typeof r.exact === 'number') {
+          r.min = r.max = r.exact;
+        }
+        var oldname = function(prefix, name) {
+          if (prefix) {
+            return prefix + name.charAt(0).toUpperCase() + name.slice(1);
+          }
+          return (name === 'deviceId') ? 'sourceId' : name;
+        };
+        if (r.ideal !== undefined) {
+          cc.optional = cc.optional || [];
+          var oc = {};
+          if (typeof r.ideal === 'number') {
+            oc[oldname('min', key)] = r.ideal;
+            cc.optional.push(oc);
+            oc = {};
+            oc[oldname('max', key)] = r.ideal;
+            cc.optional.push(oc);
+          } else {
+            oc[oldname('', key)] = r.ideal;
+            cc.optional.push(oc);
+          }
+        }
+        if (r.exact !== undefined && typeof r.exact !== 'number') {
+          cc.mandatory = cc.mandatory || {};
+          cc.mandatory[oldname('', key)] = r.exact;
+        } else {
+          ['min', 'max'].forEach(function(mix) {
+            if (r[mix] !== undefined) {
+              cc.mandatory = cc.mandatory || {};
+              cc.mandatory[oldname(mix, key)] = r[mix];
+            }
+          });
+        }
+      });
+      if (c.advanced) {
+        cc.optional = (cc.optional || []).concat(c.advanced);
+      }
+      return cc;
+    };
+
     getUserMedia = function (constraints, successCallback, failureCallback) {
-      constraints.audio = constraints.audio || false;
-      constraints.video = constraints.video || false;
+      var cc = {};
+      cc.audio = constraints.audio ?
+        constraintsToPlugin(constraints.audio) : false;
+      cc.video = constraints.video ?
+        constraintsToPlugin(constraints.video) : false;
 
       AdapterJS.WebRTCPlugin.callWhenPluginReady(function() {
         AdapterJS.WebRTCPlugin.plugin.
-          getUserMedia(constraints, successCallback, failureCallback);
+          getUserMedia(cc, successCallback, failureCallback);
       });
     };
     window.navigator.getUserMedia = getUserMedia;
