@@ -1527,7 +1527,7 @@ if ( navigator.mozGetUserMedia ||
                 url = server.urls[0];
               }
               if (url.indexOf('transport=udp') !== -1) {
-                self.iceServers.push({
+                self.iceOptions.iceServers.push({
                   username: server.username,
                   credential: server.credential,
                   urls: url
